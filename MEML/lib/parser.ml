@@ -85,7 +85,7 @@ let parse_str =
   >>| fun a -> CString a
 ;;
 
-let parse_const = (fun v -> PConst v) <$> choice [ parse_int; parse_bool; parse_str ]
+let parse_pconst = (fun v -> PConst v) <$> choice [ parse_int; parse_bool; parse_str ]
 
 let var cond =
   parse_white_space *> take_while1 cond
@@ -108,9 +108,47 @@ let p_var =
 
 let parse_var = (fun v -> PVar (v, TUnknown)) <$> p_var
 let parse_wild = (fun _ -> PWild) <$> pstrtoken "_"
-let parse_pattern = choice [ parse_wild; parse_const; parse_var ]
+let parse_pattern = choice [ parse_wild; parse_pconst; parse_var ]
+
+(* Binary operation *)
+
+let ebinop op e1 e2 = EBinaryOp (op, e1, e2)
+let ediv = ebinop @@ Div
+let emul = ebinop @@ Mul
+let eadd = ebinop @@ Add
+let esub = ebinop @@ Sub
+let eless = ebinop @@ Less
+let eleq = ebinop @@ Leq
+let egre = ebinop @@ Gre
+let egreq = ebinop @@ Greq
+let emod = ebinop @@ Mod
+let eand = ebinop @@ And
+let eor = ebinop @@ Or
+let eeq = ebinop @@ Eq
+let eneq = ebinop @@ Neq
+
+let parse_binop =
+  parse_white_space
+  *> choice
+       [ string "=" *> return eeq
+       ; string "<>" *> return eneq
+       ; string "&&" *> return eand
+       ; string "||" *> return eor
+       ; string "*" *> return emul
+       ; string "/" *> return ediv
+       ; string "%" *> return emod
+       ; string "+" *> return eadd
+       ; string "-" *> return esub
+       ; string ">=" *> return egreq
+       ; string ">" *> return egre
+       ; string "<=" *> return eleq
+       ; string "<" *> return eless
+       ]
+  <* parse_white_space
+;;
 
 
+let parse_econst = (fun v -> EConst v) <$> choice [ parse_int; parse_bool; parse_str ]
 
-
-
+let parse_expr = chainl1 parse_econst parse_binop
+  

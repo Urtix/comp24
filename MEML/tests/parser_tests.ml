@@ -19,20 +19,20 @@ let start_test parser show input =
 
 let%expect_test _ =
   let test = "true" in
-  start_test parse_const show_const test;
-  [%expect {| (CBool true) |}]
+  start_test parse_pconst show_pattern test;
+  [%expect {| (PConst (CBool true)) |}]
 ;;
 
 let%expect_test _ =
   let test = "\"itsastring\"" in
-  start_test parse_const show_const test;
-  [%expect {| (CString "itsastring") |}]
+  start_test parse_pconst show_pattern test;
+  [%expect {| (PConst (CString "itsastring")) |}]
 ;;
 
 let%expect_test _ =
   let test = "951753" in
-  start_test parse_const show_const test;
-  [%expect {| (CInt 951753) |}]
+  start_test parse_pconst show_pattern test;
+  [%expect {| (PConst (CInt 951753)) |}]
 ;;
 
 let%expect_test _ =
@@ -40,3 +40,10 @@ let%expect_test _ =
   start_test parse_var show_pattern test;
   [%expect {| (PVar ("varida", TUnknown)) |}]
 ;;
+
+let%expect_test _ =
+  let test = "1 + 3 * 2" in
+  start_test parse_expr show_expression test;
+  [%expect {| (PVar ("varida", TUnknown)) |}]
+;;
+
