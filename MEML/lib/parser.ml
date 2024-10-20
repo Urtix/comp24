@@ -128,16 +128,33 @@ let parse_pvar =
   <|> brackets_or_not @@ lift2 (fun a b -> PVar (a, b)) parse_var parse_type
 ;;
 
-let parse_pconst = (fun v -> PConst v) <$> choice [ parse_int; parse_bool ]
-let parse_wild = (fun _ -> PWild) <$> stoken "_"
+let parse_pconst =
+  lift2 (fun v t -> PConst (v, t)) (parse_int <|> parse_bool) parse_type
+  <|> ((fun a -> PConst (a, TInt)) <$> parse_int)
+  <|> ((fun a -> PConst (a, TBool)) <$> parse_bool)
+;;
+
+let parse_wild =
+  brackets (lift2(fun _ t -> PWild t) (stoken "_") parse_type )
+  <|> ((fun _ -> PWild TUnknown)
+  <$> stoken "_")
+;;
 
 let parse_tuple parser =
-  lift2 (fun a b -> PTuple (a :: b)) (token parser) (many1 (stoken "," *> parser))
+  lift2
+    (fun a b -> PTuple (a :: b, TUnknown))
+    (token parser)
+    (many1 (stoken "," *> parser))
+  <|> lift3
+        (fun a b t -> PTuple (a :: b, t))
+        (token parser)
+        (many1 (stoken "," *> parser))
+        parse_type
 ;;
 
 let rec constr_con = function
-  | [] -> PConst CNil
-  | hd :: [] when equal_pattern hd (PConst CNil) -> PConst CNil
+  | [] -> PConst (CNil, TUnknown)
+  | hd :: [] when equal_pattern hd (PConst (CNil, TUnknown)) -> PConst (CNil, TUnknown)
   | [ f; s ] -> PCon (f, s)
   | hd :: tl -> PCon (hd, constr_con tl)
 ;;
@@ -152,8 +169,6 @@ let parser_con c =
 let parse_con_2 parser constructor =
   constructor <$> (stoken "[" *> sep_by1 (stoken ";") parser <* stoken "]")
 ;;
-
-let parse_pattern = parse_wild <|> parse_pconst <|> parse_pvar
 
 type pdispatch =
   { value : pdispatch -> pattern t
@@ -176,12 +191,12 @@ let pack =
     @@ fun _ -> parse_wild <|> parse_pconst <|> parse_pvar <|> brackets @@ pack.value pack
   in
   let tuple pack =
-    fix @@ fun _ -> parse_tuple (parse pack <|> brackets @@ pack.tuple pack)
+    fix @@ fun _ -> parse_tuple @@ parse pack
   in
   { value; tuple; pattern; con }
 ;;
 
-let pat = pack.pattern pack
+let parse_patten = pack.pattern pack
 
 (** Expression type *)
 
@@ -289,7 +304,7 @@ let parse_eletin expr =
       ELetIn (is_rec, name, expr, expr2))
     parse_rec
     (parse_rename <|> parse_var)
-    (many parse_pattern)
+    (many parse_patten)
     (stoken "=" *> expr)
     (stoken "in" *> expr)
 ;;
@@ -443,7 +458,7 @@ let parse_let parse =
       Let (flag, name, body))
     parse_rec
     (parse_rename <|> parse_var)
-    (parse_white_space *> many (brackets_or_not @@ parse_pattern))
+    (parse_white_space *> many (brackets_or_not @@ parse_patten))
     (stoken "=" *> parse)
 ;;
 
