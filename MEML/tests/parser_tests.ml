@@ -18,32 +18,56 @@ let start_test parser show input =
 (* Test pattern parser *)
 
 let%expect_test _ =
+  let test = "(true: bool)" in
+  start_test parse_patten show_pattern test;
+  [%expect {| (PConst ((CBool true), TBool)) |}]
+;;
+
+let%expect_test _ =
   let test = "true" in
-  start_test parse_pattern show_pattern test;
-  [%expect {| (PConst (CBool true)) |}]
+  start_test parse_patten show_pattern test;
+  [%expect {| (PConst ((CBool true), TBool)) |}]
 ;;
 
 let%expect_test _ =
   let test = "951753" in
-  start_test parse_pattern show_pattern test;
-  [%expect {| (PConst (CInt 951753)) |}]
+  start_test parse_patten show_pattern test;
+  [%expect {| (PConst ((CInt 951753), TInt)) |}]
+;;
+
+let%expect_test _ =
+  let test = "(951753: int)" in
+  start_test parse_patten show_pattern test;
+  [%expect {| (PConst ((CInt 951753), TInt)) |}]
+;;
+
+let%expect_test _ =
+  let test = "(_: int)" in
+  start_test parse_patten show_pattern test;
+  [%expect {| (PWild TInt) |}]
+;;
+
+let%expect_test _ =
+  let test = "_" in
+  start_test parse_patten show_pattern test;
+  [%expect {| (PWild TUnknown) |}]
 ;;
 
 let%expect_test _ =
   let test = "var" in
-  start_test parse_pattern show_pattern test;
+  start_test parse_patten show_pattern test;
   [%expect {| (PVar ("var", TUnknown)) |}]
 ;;
 
 let%expect_test _ =
-  let test = "(var : string)" in
-  start_test parse_pattern show_pattern test;
-  [%expect {| : count_while1 |}]
+  let test = "(var: int)" in
+  start_test parse_patten show_pattern test;
+  [%expect {| (PVar ("var", TInt)) |}]
 ;;
 
 let%expect_test _ =
   let test = "let" in
-  start_test parse_pattern show_pattern test;
+  start_test parse_patten show_pattern test;
   [%expect {| : You can not use "let" keywords as vars |}]
 ;;
 
