@@ -34,10 +34,10 @@ type type_of_var =
 [@@deriving eq, show { with_path = false }]
 
 type pattern =
-  | PWild (** _ *)
-  | PConst of const (** constant pattern *)
+  | PWild of type_of_var(** _ *)
+  | PConst of const * type_of_var (** constant pattern *)
   | PVar of name * type_of_var (** variable pattern*)
-  | PTuple of pattern list (** (a, b) *)
+  | PTuple of pattern list * type_of_var(** (a, b) *)
   | PCon of pattern * pattern (** hd::tl *)
 [@@deriving eq, show { with_path = false }]
 
