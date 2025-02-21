@@ -7,3 +7,10 @@
  (instrumentation
   (backend bisect_ppx))
  (inline_tests))
+
+(executable
+ (name anf_test)
+ (modules anf_test)
+ (libraries MEML.Lib tests)
+ (preprocess (pps ppx_deriving.show)))
+ 
