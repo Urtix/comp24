@@ -126,3 +126,57 @@ let%expect_test "let idk (fs: int) (sn: int) = fs + sn * fs" =
     ];
   [%expect {| idk : int -> int -> int |}]
 ;;
+
+let%expect_test "let a (x: bool) = x" =
+  print_prog_result
+    [ Let
+        [ ( Notrec
+          , ["a"]
+          , EFun (PVar ("x", TBool), EVar ("x", TUnknown)) )
+        ]
+    ];
+  [%expect {| a : bool -> bool |}]
+;;
+
+let%expect_test "let sum (x: bool) y = x + y" =
+  print_prog_result
+    [ Let
+        [ ( Notrec
+          , ["sum"]
+          , EFun
+              ( PVar ("x", TBool)
+              , EFun
+                  ( PVar ("y", TUnknown)
+                  , EBinaryOp (Add, EVar ("x", TUnknown), EVar ("y", TUnknown)) ) ) )
+        ]
+    ];
+  [%expect {| Error: Unification failed on bool and int |}]
+;;
+
+let%expect_test "let f (x: int) = x + 4" =
+  print_prog_result
+    [ Let
+        [( Notrec
+        , ["f"]
+        , EFun (PVar ("x", TInt), EBinaryOp (Add, EVar ("x", TUnknown), EConst (CInt 4)))
+        )]
+    ];
+  [%expect {| f : int -> int |}]
+;;
+
+let%expect_test "let idk (fs: int) (sn: int) = fs + sn * fs" =
+  print_prog_result
+    [ Let
+        [( Notrec
+        , ["idk"]
+        , EFun
+            ( PVar ("fs", TInt)
+            , EFun
+                ( PVar ("sn", TInt)
+                , EBinaryOp
+                    ( Add
+                    , EVar ("fs", TUnknown)
+                    , EBinaryOp (Mul, EVar ("sn", TUnknown), EVar ("fs", TUnknown)) ) ) ) )]
+    ];
+  [%expect {| idk : int -> int -> int |}]
+;;
