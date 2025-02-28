@@ -27,6 +27,8 @@ type ty =
   | TTuple of ty list
 [@@deriving eq, show { with_path = false }]
 
+let int_typ = TInt
+
 type error =
   [ `Occurs_check
   | `Empty_pattern

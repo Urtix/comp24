@@ -327,19 +327,16 @@ let infer =
          return (sres, TBool))
     | EVar (x, _) -> lookup_env x env
     | EFun (p, e1) ->
-      let* tv = fresh_var in
       let* v, env2 =
         match p with
-        | PVar (x, TUnknown) -> return (tv, TypeEnv.extend env (x, S (VarSet.empty, tv)))
+        | PVar (x, TUnknown) -> 
+          let* tv = fresh_var in
+          return (tv, TypeEnv.extend env (x, S (VarSet.empty, tv)))
         | PVar (x, TInt) ->
-          let* a = get_fresh in
-          let v = TVar (a, TInt) in
-          return (v, TypeEnv.extend env (x, S (VarSet.empty, v)))
+          return (TInt, TypeEnv.extend env (x, S (VarSet.empty, TInt)))
         | PVar (x, TBool) ->
-          let* a = get_fresh in
-          let v = TVar (a, TBool) in
-          return (v, TypeEnv.extend env (x, S (VarSet.empty, v)))
-        | _ -> return (tv, env)
+          return (TBool, TypeEnv.extend env (x, S (VarSet.empty, TBool)))
+        | _ -> failwith "Unsupported pattern"
       in
       let* s, ty = helper env2 e1 in
       let trez = TArrow (Subst.apply s v, ty) in
