@@ -180,3 +180,31 @@ let%expect_test "let idk (fs: int) (sn: int) = fs + sn * fs" =
     ];
   [%expect {| idk : int -> int -> int |}]
 ;;
+
+let%expect_test "match 1 with 1 -> 42 | 2 -> 99" =
+  print_result
+    (EMatch
+       ( EConst (CInt 1)
+       , [ (PConst (CInt 1), EConst (CInt 42))
+         ; (PConst (CInt 2), EConst (CInt 99))
+         ] ));
+  [%expect {| int |}]
+;;
+
+let%expect_test "match true with true -> false | false -> true" =
+  print_result
+    (EMatch
+       ( EConst (CBool true)
+       , [ (PConst (CBool true), EConst (CBool false))
+         ; (PConst (CBool false), EConst (CBool true))
+         ] ));
+  [%expect {| bool |}]
+;;
+
+let%expect_test "match (1, []) with (x, y) -> y" =
+  print_result
+    (EMatch
+       ( ETuple [EConst (CInt 1); EConst CNil]
+       , [ (PTuple [PVar ("x", TInt); PVar ("y", TUnknown)], EVar ("y", TUnknown)) ] ));
+  [%expect {| 'a list |}]
+;;

@@ -304,6 +304,45 @@ let lookup_env e xs =
     return (Subst.empty, ans)
 ;;
 
+let infer_pattern : TypeEnv.t -> pattern -> (TypeEnv.t * ty) R.t =
+  let rec helper (env : TypeEnv.t) (p : pattern) : (TypeEnv.t * ty) R.t =
+    let env = TypeEnv.apply Subst.empty env in
+    match p with
+    | PWild -> let* tv = fresh_var in return (env, tv)
+    | PTuple patterns ->
+      let* env, tys =
+        Base.List.fold_left patterns ~init:(return (env, []))
+          ~f:(fun acc p ->
+            let* env, tys = acc in
+            let* env, ty = helper env p in
+            return (env, ty :: tys))
+      in
+      return (env, TTuple (List.rev tys))
+    | PConst c -> (
+        match c with
+        | CInt _ -> return (env, TInt)
+        | CBool _ -> return (env, TBool)
+        | CNil -> let* var = fresh_var in return (env, TList var)
+      )
+    | PVar (x, _) -> (
+        match Base.Map.find env x with
+        | None ->
+          let* var = fresh_var in
+          let env = TypeEnv.extend env (x, S (VarSet.empty, var)) in
+          return (env, var)
+        | Some (S (_, ty)) -> return (env, ty)
+      )
+    | PCon (p1, p2) ->
+      let* env, ty1 = helper env p1 in
+      let* env, ty2 = helper env p2 in
+      let* subst = unify (TList ty1) ty2 in
+      let ty2 = Subst.apply subst ty2 in
+      let env = TypeEnv.apply subst env in
+      return (env, Subst.apply subst ty2)
+  in
+  fun env p -> helper env p
+
+
 let infer =
   let rec (helper : TypeEnv.t -> Ast.expression -> (Subst.t * ty) R.t) =
     fun env -> function
@@ -417,7 +456,25 @@ let infer =
       in
       let* final_subst = Subst.compose s s2 in
       return (final_subst, t2)
-    | _ -> failwith "match"
+  | EMatch (c, cases) ->
+      let* c_subst, c_ty = helper env c in
+      let* tv = fresh_var in
+      let* e_subst, e_ty =
+        Base.List.fold_left
+          cases
+          ~init:(return (c_subst, tv))
+          ~f:(fun acc (pat, e) ->
+            let* subst, ty = acc in
+            let* pat_env, pat_ty = infer_pattern env pat in
+            let* subst2 = unify c_ty pat_ty in
+            let* subst3, e_ty = helper pat_env e in
+            let* subst4 = unify ty e_ty in
+            let* final_subst = Subst.compose_all [ subst; subst2; subst3; subst4 ] in
+            return (final_subst, Subst.apply final_subst ty))
+      in
+      let* final_subst = Subst.compose c_subst e_subst in
+      return (final_subst, Subst.apply final_subst e_ty)
+    (* | _ -> failwith "match" *)
   in
   helper
 ;;
