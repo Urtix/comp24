@@ -7,9 +7,9 @@
 (source
  (github Urtix/comp24))
 
-(authors "Ermolovich, Perevalov")
+(authors "Dyachkov, Perevalov")
 
-(maintainers "Ermolovich, Perevalov")
+(maintainers "Dyachkov, Perevalov")
 
 (license LGPL-2.1-or-later WITH OCaml-LGPL-linking-exception)
 

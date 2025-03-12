@@ -1,3 +1,3 @@
-(** Copyright 2024-2025, Perevalov Efim, Ermolovich Anna *)
+(** Copyright 2023-2024, Perevalov Efim, Dyachkov Vitaliy *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)

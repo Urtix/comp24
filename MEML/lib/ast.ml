@@ -1,4 +1,4 @@
-(** Copyright 2024-2025, Perevalov Efim, Ermolovich Anna *)
+(** Copyright 2024-2025, Perevalov Efim, Dyachkov Vitaliy *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -15,6 +15,7 @@ type binary_op =
   | Sub (** 2 - 1 *)
   | Mul (** * *)
   | Div (** / *)
+  | Mod (** % *)
   | And (** && *)
   | Or (** || *)
   | Eq (** = *)
@@ -37,7 +38,7 @@ type pattern =
   | PConst of const (** constant pattern *)
   | PVar of name * type_of_var (** variable pattern*)
   | PTuple of pattern list (** (a, b) *)
-  | PCon of pattern * pattern (** hd :: tl *)
+  | PCon of pattern * pattern (** hd::tl *)
 [@@deriving eq, show { with_path = false }]
 
 type rec_flag =
@@ -49,21 +50,19 @@ type expression =
   | EConst of const (** constant *)
   | EVar of name * type_of_var (** variable *)
   | EBinaryOp of binary_op * expression * expression (** binary operation *)
-  | EApp of expression * expression * type_of_var (** application *)
+  | EApp of expression * expression (** application *)
   | EIfElse of expression * expression * expression (** if z then v else n*)
   | ELetIn of rec_flag * name * expression * expression
-  | ELetPatIn of pattern * expression * expression
   | EFun of pattern * expression (** fun z -> z + z *)
   | EList of expression * expression (** [1;2;3]*)
-  | ETuple of expression list (** (1,2,3) *)
-  | EMatch of expression * (pattern * expression) list
+  | ETuple of expression list (** (1,2,3)*)
 [@@deriving eq, show { with_path = false }]
 
 (** Binding type *)
 type bindings =
-  | Let of rec_flag * (pattern * expression) list
+  | Let of rec_flag * name * expression (** let id = expr *)
   | Expression of expression (** simple expressions *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
 (** Statements type *)
-type statements = bindings list [@@deriving eq, show { with_path = false }]
+type statements = bindings list [@@deriving show { with_path = false }]
